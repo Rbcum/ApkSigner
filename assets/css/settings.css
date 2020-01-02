@@ -1,0 +1,11 @@
+#frame_container > [class^="col"] {
+    padding-top: .75rem;
+    padding-bottom: .75rem;
+    background-color: rgb(243, 243, 243);
+    border:  1px solid rgb(235, 235, 235);
+  }
+
+#key-list{
+  height: 280px;
+  /* overflow:scroll; */
+}

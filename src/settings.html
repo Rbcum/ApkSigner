@@ -1,0 +1,57 @@
+<html>
+
+<head>
+    <title>ApkSigner</title>
+    <link rel="stylesheet" href="../assets/css/settings.css" />
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+        integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+</head>
+
+<body>
+    <div class="container-fluid pl-0 pr-0">
+        <div class="container-fluid row ml-0 mr-0 pl-0 pr-0" id="frame_container">
+            <div class="col-5">
+                <div class="list-group list-group-flush" id="key-list">
+                </div>
+                <div class="row" style="justify-content: flex-end; margin-top: 10px;">
+                    <button class="btn btn-success" style="height: 40px; width: 40px; " id="add-key">+</button>
+                    <button class="btn btn-danger"
+                        style="height: 40px; width: 40px; margin-left: 10px;margin-right: 10px;"
+                        id="remove-key">-</button>
+                </div>
+            </div>
+            <div class="col">
+                <div class="form-group">
+                    <label class="col-form-label-sm">Keystore File</label>
+                    <div>
+                        <input class="form-control form-control-sm" readonly id="ks-file">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-form-label-sm">Keystore Password</label>
+                    <div>
+                        <input class="form-control form-control-sm" id="ks-pass">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-form-label-sm">Key Alias</label>
+                    <div>
+                        <input class="form-control form-control-sm" id="key-alias">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-form-label-sm">Key Password</label>
+                    <div>
+                        <input class="form-control form-control-sm" id="key-pass">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button class="btn btn-primary float-right mr-5 mt-3 " style="width: 100px" id="save-btn">Save</button>
+        <button class="btn btn-secondary float-right mr-2 mt-3 " style="width: 100px" id="cancel-btn">Cancel</button>
+    </div>
+</body>
+
+<script src="settings.js"></script>
+
+</html>

@@ -1,0 +1,25 @@
+{
+  "name": "apk-signer",
+  "productName": "ApkSigner",
+  "version": "1.0.0",
+  "description": "An app to algin and sign android apk",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "repository": "https://github.com/electron/electron-quick-start",
+  "keywords": [
+    "Electron",
+    "quick",
+    "start",
+    "tutorial",
+    "demo"
+  ],
+  "devDependencies": {
+    "electron": "^7.1.7"
+  },
+  "dependencies": {
+    "jquery": "^3.4.1",
+    "shell-env": "^3.0.0"
+  }
+}
