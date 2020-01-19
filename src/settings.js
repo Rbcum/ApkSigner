@@ -11,7 +11,7 @@ const store = new Store({
         index: -1,
     }
 });
-let selectedIndex = store.get('index');
+let selectedIndex = 0;
 keyList.push(...store.get('keys'));
 
 updateUI();
@@ -22,7 +22,6 @@ bindInputs('#key-pass', 'keyPass');
 
 $('#save-btn').on('click', function (e) {
     store.set('keys', keyList);
-    store.set('index', selectedIndex);
     remote.getCurrentWindow().close();
 })
 $('#cancel-btn').on('click', function (e) {
@@ -48,7 +47,6 @@ $('#remove-key').on('click', function (e) {
 
 function bindInputs(inputId, prop) {
     $(inputId).on('input', (e) => {
-        console.log('dd')
         keyList[selectedIndex][prop] = e.target.value;
     });
 }
@@ -58,7 +56,7 @@ function updateUI() {
     for (let index = 0; index < keyList.length; index++) {
         let k = keyList[index];
         let button = document.createElement("button");
-        let classAttr = "list-group-item list-group-item-action";
+        let classAttr = "list-group-item list-group-item-action border-0";
         if (selectedIndex == index) classAttr += ' active';
         button.setAttribute('class', classAttr);
         button.innerHTML = path.basename(k.path);

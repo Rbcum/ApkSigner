@@ -4,7 +4,8 @@
 // `nodeIntegration` is turned off. Use `preload.js` to
 // selectively enable features needed in the rendering
 // process.
-const { ipcRenderer, remote } = require('electron');
+const { clipboard, ipcRenderer, remote, shell } = require('electron');
+const dialog = remote.dialog;
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -21,22 +22,26 @@ const store = new Store({
         keys: [],
     }
 });
-let apkFiles = [];
+let apk = null;
 let buildToolPath = null;
-let settingsWin;
+let settingsWin = null;
 let key = null;
 
-let dragFile = document.getElementById("drag-file");
+function updateUI() {
+    $('#buildTools').val(buildToolPath);
+    if (apk != null) {
+        $('#apkFile').val(apk.name);
+        $('#aligned').val(appendFilePath(apk.name, "_aligned"));
+        $('#signed').val(appendFilePath(apk.name, "_aligned_signed"));
+    }
+}
+
+let dragFile = document.body;
 dragFile.addEventListener('drop', function (e) {
-    // console.log(e);
     e.preventDefault();
     e.stopPropagation();
-
-    apkFiles.length = 0;
-    for (let f of e.dataTransfer.files) {
-        log(`APK: ${f.path}`);
-        apkFiles.push(f)
-    }
+    apk = e.dataTransfer.files[0];
+    updateUI();
 });
 
 dragFile.addEventListener('dragover', function (e) {
@@ -47,15 +52,14 @@ dragFile.addEventListener('dragover', function (e) {
 
 $('#settings-btn').on('click', async (e) => {
     settingsWin = new remote.BrowserWindow({
-        width: 550,
-        height: 460,
+        width: 600,
+        height: 435,
         webPreferences: {
             nodeIntegration: true
         },
         parent: remote.getCurrentWindow(),
         modal: true,
         show: false,
-        resizable: false,
     })
     settingsWin.loadFile('src/settings.html')
     settingsWin.once('ready-to-show', () => {
@@ -65,50 +69,79 @@ $('#settings-btn').on('click', async (e) => {
     settingsWin.on('closed', () => {
         settingsWin = null;
         store.reload();
-        selectKey();
+        updateKey();
     })
 });
 
 $('#sign-btn').on('click', async (e) => {
-    if (apkFiles.length === 0) {
-        log('Invalid apk!');
+    if (key === null) {
+        dialog.showErrorBox('Key not found!', '');
+        return;
+    }
+    if (apk === null) {
+        dialog.showErrorBox('Invalid apk!', '');
         return;
     }
     if (buildToolPath === null) {
-        log('BuildTools not found!');
+        dialog.showErrorBox('BuildTools not found!', '');
         return;
     }
     $(e.target).prop('disabled', true);
 
-    let alignedApk = appendFilePath(apkFiles[0].path, "_aligned");
-    let alignRet = await alignApk(path.join(buildToolPath, 'zipalign'), apkFiles[0], alignedApk);
+    let alignedApk = appendFilePath(apk.path, "_aligned");
+    let signedApk = appendFilePath(apk.path, "_aligned_signed");
+
+    let alignRet = await alignApk(path.join(buildToolPath, 'zipalign'), apk, alignedApk);
     if (!alignRet) {
         $(e.target).prop('disabled', false);
         return;
     }
 
-    let signedApk = appendFilePath(alignedApk, "_signed");
     let signRet = await signApk(path.join(buildToolPath, os.platform() === 'win32' ? 'apksigner.bat' : 'apksigner'), alignedApk, signedApk);
     if (!signRet) {
         $(e.target).prop('disabled', false);
         return;
     }
-    log('DONE: ' + signedApk);
+
     $(e.target).prop('disabled', false);
+
+    let dialogResult = await dialog.showMessageBox(remote.getCurrentWindow(), {
+        message: 'Signing Success!',
+        buttons: ['Open Folder', 'Close'],
+    })
+    switch (dialogResult.response) {
+        case 0:
+            shell.showItemInFolder(signedApk);
+            break;
+    }
 });
 
-function selectKey() {
+function updateKey() {
     let keyList = store.get('keys');
-    let index = store.get('index');
-    if (keyList.length > 0) {
-        let oldKey = key;
-        key = keyList[index];
-        if (!oldKey || oldKey.path != key.path) {
-            log("KEY: " + key.path);
+    let selectedKey = store.get('selectedKey');
+    $('#keyList').empty();
+    $('#keyListButton').text('Select Key');
+    key = null;
+    if (keyList.length === 0) {
+        return;
+    }
+    for (let index = 0; index < keyList.length; index++) {
+        let k = keyList[index];
+        let kFileName = path.basename(k.path);
+        let a = document.createElement("a");
+        a.setAttribute('class', 'dropdown-item');
+        a.setAttribute('href', '#');
+        a.innerHTML = kFileName;
+        a.onclick = (e) => {
+            key = k;
+            $('#keyListButton').text(kFileName);
+            store.set('selectedKey', k.path);
+        };
+        if (selectedKey === k.path) {
+            key = k;
+            $('#keyListButton').text(kFileName);
         }
-    } else {
-        key = null;
-        log("KEY: NONE");
+        $('#keyList').append(a);
     }
 }
 
@@ -119,11 +152,6 @@ function findBuildTool() {
     versionsDirs = versionsDirs.filter(f => f.match(/\d+.\d+.\d+/));
     versionsDirs.sort();
     return path.join(dir, versionsDirs.pop());
-}
-
-function log(msg) {
-    let content = $('#txtarea').val();
-    $('#txtarea').text(content + msg + "\n");
 }
 
 function appendFilePath(name, append) {
@@ -147,13 +175,10 @@ async function alignApk(execPath, file, target) {
     }
     let aligned = await isAligned();
     if (!aligned) {
-        console.log('sss')
-        log('Aligning: ' + file.name);
         try {
             await exec(execPath, ['4', file.path, target]);
         } catch (e) {
-            console.log(e);
-            log(e.message);
+            dialog.showErrorBox('Align Failed', e.message);
             return false;
         }
     } else {
@@ -178,12 +203,10 @@ async function signApk(execPath, file, target) {
         '--in', file,
         '--out', target,
     ];
-    log('Signing: ' + file);
     try {
         await exec(execPath, args);
     } catch (e) {
-        console.log(e);
-        log(e.message);
+        dialog.showErrorBox('Sign Failed', e.message);
         return false;
     }
     return true;
@@ -191,10 +214,8 @@ async function signApk(execPath, file, target) {
 
 function init() {
     buildToolPath = findBuildTool();
-    console.log(buildToolPath)
-    log("BUILD_TOOLS: " + buildToolPath);
-    selectKey();
-
+    updateKey();
+    updateUI();
 }
 
 init();
