@@ -8,11 +8,10 @@ const store = new Store({
     configName: 'settings',
     defaults: {
         keys: [],
-        index: -1,
     }
 });
-let selectedIndex = 0;
 keyList.push(...store.get('keys'));
+let selectedIndex = keyList.length == 0 ? -1 : 0;
 
 updateUI();
 
