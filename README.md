@@ -1,6 +1,6 @@
 # ApkSigner
 
-For once I could not find an APK signing gui tool on Mac, so I wrote this electron app,
+Once I could not find an APK signing gui tool on Mac, so I wrote this electron app,
 with keystore list configuration.
 
 <img src="website/screen1.png" width="500"/>
